@@ -1,17 +1,17 @@
-from playwright.async_api import async_playwright, TimeoutError
 import json
 import fnmatch
-from urllib.parse import urlparse
-
+from urllib.parse import urlparse, urljoin
+from playwright.async_api import async_playwright, TimeoutError
+from .config import Config
 
 class Crawler: 
     def __init__(self, config: Config):
         self.config = config
         
-    def crawl(self):
+    async def crawl(self):
         results = []
         queue = [self.config.url] # Initialize the queue with the initial URL
-        visited = set() # Track visited URLs to prevent revisiting
+        visited_urls = set() # Track visited URLs to prevent revisiting
         page_count = 0 # Track the number of pages crawled
 
         # Initialize Playwright
@@ -20,10 +20,10 @@ class Crawler:
             page = await browser.new_page()
 
             # Add a cookie if specified in the configuration
-            if config.cookie:
+            if self.config.cookie:
                 await page.context.add_cookies([{
-                    "name": config.cookie['name'],
-                    "value": config.cookie['value'], "url": config.url}])
+                    "name": self.config.cookie['name'],
+                    "value": self.config.cookie['value'], "url": self.config.url}])
             try: 
                 while queue and page_count < self.config.max_pages_to_crawl:
                     url = queue.pop(0)
@@ -48,7 +48,7 @@ class Crawler:
                         full_url = urljoin(cleaned_url, href)
                         # Remove the hash from the URL
                         cleaned_full_url = full_url.split('#')[0]
-                        if cleaned_full_url not in visited_urls and fnmatch.fnmatch(cleaned_full_url, config.match):
+                        if cleaned_full_url not in visited_urls and fnmatch.fnmatch(cleaned_full_url, self.config.match):
                             queue.append(cleaned_full_url)
                     # for link in await page.query_selector_all(self.config.selector):
                     #     href = await link.get_attribute('href')

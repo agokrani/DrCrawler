@@ -1,6 +1,10 @@
+
+
+
+
 class Config: 
     def __init__(self, url, match, selector, max_pages_to_crawl, output_file_name, cookie=None):
-       """
+        """
         Initialization configuration class.
 
         :param url: str - The initial URL from which the spider starts crawling.
