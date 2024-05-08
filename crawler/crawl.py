@@ -7,7 +7,17 @@ from .config import Config
 class Crawler: 
     def __init__(self, config: Config):
         self.config = config
-        
+    
+    async def get_page_html(self, page):
+        try:
+            # Wait for the selector to appear, with a maximum wait time of 3 seconds
+            await page.wait_for_selector(self.config.selector, timeout=3000)
+            element = await page.query_selector(self.config.selector)
+            return await element.inner_text() if element else ""
+        except TimeoutError:
+            # Return an empty string if the selector times out
+            return ""
+
     async def crawl(self):
         results = []
         queue = [self.config.url] # Initialize the queue with the initial URL
@@ -34,30 +44,27 @@ class Crawler:
                     try:
                         # Attempt to access the page, setting a timeout of 3 seconds
                         await page.goto(cleaned_url, timeout=3000)
-                        content = await page.content()
-                        results.append({cleaned_url: content})
-                        page_count += 1
+                        html = await self.get_page_html(page)
+                        if html:  # Only add to results if HTML content was successfully retrieved
+                            results.append({'url': cleaned_url, 'html': html})
+                            page_count += 1
+                            print(f"Crawler: Crawling Page {page_count} at {cleaned_url}")
+                        
+                        
                     except TimeoutError:
                         print(f'Timeout error occurred while trying to load {cleaned_url}')
                     
-
-                links = await page.query_selector_all("a")
-                for link in links:
-                    href = await link.get_attribute("href")
-                    if href:
-                        full_url = urljoin(cleaned_url, href)
-                        # Remove the hash from the URL
-                        cleaned_full_url = full_url.split('#')[0]
-                        if cleaned_full_url not in visited_urls and fnmatch.fnmatch(cleaned_full_url, self.config.match):
-                            queue.append(cleaned_full_url)
-                    # for link in await page.query_selector_all(self.config.selector):
-                    #     href = await link.get_attribute('href')
-                    #     if href and self._match_link(href):
-                    #         # Convert relative URLs to absolute URLs
-                    #         href = self._convert_to_absolute_url(url, href)
-                    #         if href not in visited:
-                    #             queue.append(href)
-                   
+                
+                    links = await page.query_selector_all("a")
+                    #import pdb;pdb.set_trace()
+                    for link in links:
+                        href = await link.get_attribute("href")
+                        if href:
+                            full_url = urljoin(cleaned_url, href)
+                            # Remove the hash from the URL
+                            cleaned_full_url = full_url.split('#')[0]
+                            if cleaned_full_url not in visited_urls and fnmatch.fnmatch(cleaned_full_url, self.config.match):
+                                queue.append(cleaned_full_url)
             finally: 
                 await browser.close()
 

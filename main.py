@@ -12,10 +12,10 @@ async def main(config: Config):
 # Running the main function
 if __name__ == "__main__":
     config = Config(
-        url="https://getbootstrap.com/docs/5.3/getting-started/introduction/",
-        match="https://getbootstrap.com/docs/5.3/getting-started/**",
+        url="https://www.medindia.net/dr/drjoekaushik",
+        match="https://www.medindia.net/dr/**",
         selector="body",
-        max_pages_to_crawl=2,
+        max_pages_to_crawl=10,
         output_file_name="output.json"
     )
     asyncio.run(main(config))
